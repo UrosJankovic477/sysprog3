@@ -14,6 +14,7 @@ using Catalyst;
 using Mosaik.Core;
 using Newtonsoft.Json.Linq;
 using Version = Mosaik.Core.Version;
+using Catalyst.Models;
 
 public class Review
 {
@@ -27,11 +28,9 @@ public class ReviewStream : IObservable<Review>
     {
         return reviewSubject.Subscribe(observer);
     }
-    private static string DoNER(IDocument doc)
+    private static string GetDocData(IDocument doc)
     {
-        string ret = "";
-        doc.ToTokenList().ForEach(p => ret +=  $"Value: {p.Value} Type: {p.POS}\n");
-        return ret;
+        return $"Input text:\n\t'{doc.Value}'\n\nTokenized Value:\n\t'{doc.TokenizedValue(mergeEntities: true)}'\n\nEntities: \n{string.Join("\n", doc.SelectMany(span => span.GetEntities()).Select(e => $"\t{e.Value} [{e.EntityType.Type}]"))}";
     }
 
     public async Task<JToken> Search(string location, params int[] prices)
@@ -98,6 +97,9 @@ public class ReviewStream : IObservable<Review>
             var result = await Search(location, prices);
         
             List<Task> tasks = new List<Task>();
+            var nlp = await Pipeline.ForAsync(Language.English);
+            nlp.Add(await AveragePerceptronEntityRecognizer.FromStoreAsync(language: Language.English, version: Version.Latest, tag: "WikiNER"));
+
             foreach (var item in result)
             {
                 Task task = new Task(async () => {
@@ -110,12 +112,11 @@ public class ReviewStream : IObservable<Review>
                             Rating = int.Parse(r["rating"].ToString())
                         };
                        
-                        Storage.Current = new DiskStorage("catalyst-models");
-                        var nlp = await Pipeline.ForAsync(Language.English);
-                    //    nlp.Add(await Catalyst.Models.AveragePerceptronEntityRecognizer.FromStoreAsync(Language.English, Version.Latest, "WikiNER")); 
+                        
                         var doc = new Document(review.Text, Language.English);
                         nlp.ProcessSingle(doc);
-                        review.Text = DoNER(doc);
+                        
+                        review.Text = GetDocData(doc);
                         reviewSubject.OnNext(review);
 
 
