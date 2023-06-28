@@ -24,14 +24,28 @@ public static class Program
         var reviewObserver2 = new ReviewObesrver("b");
         var reviewObserver3 = new ReviewObesrver("c");
         
-        var filteredStream = reviewStream;
+        var filteredStream = reviewStream.Where(p => p.Rating == 1);
 
         var subription1 = filteredStream.Subscribe(reviewObserver1);
         var subription2 = filteredStream.Subscribe(reviewObserver2);
         var subription3 = filteredStream.Subscribe(reviewObserver3);
 
-
-        reviewStream.GetReviews("Detroit", 1, 2);
+        string? location = Console.ReadLine();
+        if (location == null)
+        {
+            location = string.Empty;
+        }
+        string? pricesString = Console.ReadLine();
+        if (pricesString == null)
+        {
+            pricesString = string.Empty; 
+        }
+        List<int> prices = new List<int>();
+        foreach(string price in pricesString.Split(' '))
+        {
+            prices.Add(int.Parse(price));
+        }
+        reviewStream.GetReviews(location, prices.ToArray());
         Console.ReadLine();
 
         subription1.Dispose();

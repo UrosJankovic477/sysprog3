@@ -91,9 +91,6 @@ public class ReviewStream : IObservable<Review>
     {
         try
         {
-            
-
-
             var result = await Search(location, prices);
         
             List<Task> tasks = new List<Task>();
@@ -155,6 +152,6 @@ public class ReviewObesrver : IObserver<Review>
 
     public void OnNext(Review value)
     {
-        Console.WriteLine($"{name}: {value.Text}");
+        Console.Write($"{name}\nText: {value.Text}\nRating: {value.Rating}\n");
     }
 }
